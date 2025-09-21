@@ -4,15 +4,24 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
         primary: 'hsl(214, 70%, 50%)',
+        'primary-dark': 'hsl(214, 70%, 60%)',
         accent: 'hsl(30, 95%, 55%)',
+        'accent-dark': 'hsl(30, 95%, 65%)',
         bg: 'hsl(210, 36%, 96%)',
+        'bg-dark': 'hsl(220, 15%, 12%)',
         surface: 'hsl(0, 0%, 100%)',
+        'surface-dark': 'hsl(220, 15%, 18%)',
         'text-primary': 'hsl(210, 20%, 20%)',
+        'text-primary-dark': 'hsl(210, 20%, 90%)',
         'text-secondary': 'hsl(210, 20%, 40%)',
+        'text-secondary-dark': 'hsl(210, 20%, 70%)',
+        border: 'hsl(210, 20%, 90%)',
+        'border-dark': 'hsl(220, 15%, 25%)',
       },
       borderRadius: {
         'xs': '4px',

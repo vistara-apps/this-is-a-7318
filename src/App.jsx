@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { WeatherProvider } from './contexts/WeatherContext'
 import { UserProvider } from './contexts/UserContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import Header from './components/Header'
 import MainContent from './components/MainContent'
 import BottomNavigation from './components/BottomNavigation'
@@ -23,22 +24,26 @@ function App() {
 
   if (!isOnboarded) {
     return (
-      <UserProvider>
-        <OnboardingFlow onComplete={completeOnboarding} />
-      </UserProvider>
+      <ThemeProvider>
+        <UserProvider>
+          <OnboardingFlow onComplete={completeOnboarding} />
+        </UserProvider>
+      </ThemeProvider>
     )
   }
 
   return (
-    <UserProvider>
-      <WeatherProvider>
-        <div className="h-full flex flex-col bg-bg">
-          <Header />
-          <MainContent currentView={currentView} />
-          <BottomNavigation currentView={currentView} onViewChange={setCurrentView} />
-        </div>
-      </WeatherProvider>
-    </UserProvider>
+    <ThemeProvider>
+      <UserProvider>
+        <WeatherProvider>
+          <div className="h-full flex flex-col bg-bg dark:bg-bg-dark transition-colors duration-300">
+            <Header />
+            <MainContent currentView={currentView} />
+            <BottomNavigation currentView={currentView} onViewChange={setCurrentView} />
+          </div>
+        </WeatherProvider>
+      </UserProvider>
+    </ThemeProvider>
   )
 }
 

@@ -22,8 +22,8 @@ const Dashboard = () => {
   if (error) {
     return (
       <div className="p-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">Error loading weather data. Please try again later.</p>
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 transition-colors duration-300">
+          <p className="text-red-700 dark:text-red-400">Error loading weather data. Please try again later.</p>
         </div>
       </div>
     )
