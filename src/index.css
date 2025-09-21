@@ -3,6 +3,26 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-primary: 214 70% 50%;
+    --color-accent: 30 95% 55%;
+    --color-bg: 210 36% 96%;
+    --color-surface: 0 0% 100%;
+    --color-text-primary: 210 20% 20%;
+    --color-text-secondary: 210 20% 40%;
+    --color-border: 210 20% 90%;
+  }
+  
+  :root.dark {
+    --color-primary: 214 70% 60%;
+    --color-accent: 30 95% 65%;
+    --color-bg: 220 15% 12%;
+    --color-surface: 220 15% 18%;
+    --color-text-primary: 210 20% 90%;
+    --color-text-secondary: 210 20% 70%;
+    --color-border: 220 15% 25%;
+  }
+
   * {
     box-sizing: border-box;
   }
@@ -20,8 +40,9 @@
       sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: hsl(210, 36%, 96%);
-    color: hsl(210, 20%, 20%);
+    background: hsl(var(--color-bg));
+    color: hsl(var(--color-text-primary));
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   
   #root {
@@ -34,5 +55,10 @@
     background: rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+  
+  .dark .glass-effect {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 }

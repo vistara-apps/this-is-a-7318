@@ -18,7 +18,7 @@ const CurrentWeatherCard = ({ weather }) => {
   } = weather
 
   return (
-    <div className="bg-gradient-to-br from-primary to-primary/80 rounded-xl p-6 text-white shadow-card">
+    <div className="bg-gradient-to-br from-primary to-primary/80 dark:from-primary-dark dark:to-primary-dark/80 rounded-xl p-6 text-white shadow-card transition-colors duration-300">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-3xl font-bold">{Math.round(temperature)}°</h2>

@@ -1,13 +1,17 @@
 import axios from 'axios'
 
-// Demo weather service with mock data
-// In production, you would use a real API key and endpoints
+// Real weather service with OpenWeatherMap API
 class WeatherService {
   constructor() {
-    // For demo purposes, we'll use mock data
-    // In production, you would use: process.env.VITE_OPENWEATHER_API_KEY
-    this.apiKey = 'demo_key'
+    // Use environment variable for API key, fallback to demo mode if not provided
+    this.apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY
     this.baseUrl = 'https://api.openweathermap.org/data/2.5'
+    this.geocodingUrl = 'https://api.openweathermap.org/geo/1.0'
+    this.useMockData = !this.apiKey || this.apiKey === 'demo_key'
+    
+    if (this.useMockData) {
+      console.warn('OpenWeatherMap API key not found. Using mock data. Set VITE_OPENWEATHER_API_KEY environment variable for real data.')
+    }
   }
 
   // Mock current weather data
@@ -76,49 +80,163 @@ class WeatherService {
   }
 
   async getCurrentWeather(lat, lon) {
-    // In production, replace with actual API call
-    // const response = await axios.get(`${this.baseUrl}/weather`, {
-    //   params: {
-    //     lat,
-    //     lon,
-    //     appid: this.apiKey,
-    //     units: 'imperial'
-    //   }
-    // })
-    
-    // For demo, return mock data
-    return new Promise(resolve => {
-      setTimeout(() => resolve(this.getMockCurrentWeather()), 500)
-    })
+    if (this.useMockData) {
+      // Fallback to mock data if no API key
+      return new Promise(resolve => {
+        setTimeout(() => resolve(this.getMockCurrentWeather()), 500)
+      })
+    }
+
+    try {
+      const response = await axios.get(`${this.baseUrl}/weather`, {
+        params: {
+          lat,
+          lon,
+          appid: this.apiKey,
+          units: 'imperial'
+        }
+      })
+
+      const data = response.data
+      return {
+        temperature: Math.round(data.main.temp),
+        feelsLike: Math.round(data.main.feels_like),
+        humidity: data.main.humidity,
+        windSpeed: Math.round(data.wind.speed),
+        windDirection: this.getWindDirection(data.wind.deg),
+        visibility: Math.round(data.visibility / 1609.34), // Convert meters to miles
+        uvIndex: 0, // UV index requires separate API call
+        pressure: Math.round(data.main.pressure * 0.02953), // Convert hPa to inHg
+        condition: this.mapWeatherCondition(data.weather[0].id),
+        description: data.weather[0].description,
+        icon: data.weather[0].icon,
+        timestamp: new Date().toISOString()
+      }
+    } catch (error) {
+      console.error('Error fetching current weather:', error)
+      throw new Error('Failed to fetch weather data')
+    }
   }
 
   async getHourlyForecast(lat, lon) {
-    // In production, replace with actual API call
-    return new Promise(resolve => {
-      setTimeout(() => resolve(this.getMockHourlyForecast()), 700)
-    })
+    if (this.useMockData) {
+      return new Promise(resolve => {
+        setTimeout(() => resolve(this.getMockHourlyForecast()), 700)
+      })
+    }
+
+    try {
+      const response = await axios.get(`${this.baseUrl}/forecast`, {
+        params: {
+          lat,
+          lon,
+          appid: this.apiKey,
+          units: 'imperial'
+        }
+      })
+
+      return response.data.list.slice(0, 24).map(item => ({
+        time: item.dt_txt,
+        temperature: Math.round(item.main.temp),
+        condition: this.mapWeatherCondition(item.weather[0].id),
+        precipitation: (item.rain?.['3h'] || 0) * 100 / 3, // Convert to percentage chance
+        windSpeed: Math.round(item.wind.speed),
+        humidity: item.main.humidity
+      }))
+    } catch (error) {
+      console.error('Error fetching hourly forecast:', error)
+      throw new Error('Failed to fetch hourly forecast')
+    }
   }
 
   async getDailyForecast(lat, lon) {
-    // In production, replace with actual API call
-    return new Promise(resolve => {
-      setTimeout(() => resolve(this.getMockDailyForecast()), 600)
-    })
+    if (this.useMockData) {
+      return new Promise(resolve => {
+        setTimeout(() => resolve(this.getMockDailyForecast()), 600)
+      })
+    }
+
+    try {
+      // OpenWeatherMap's One Call API would be ideal for daily forecast
+      // For now, we'll use the 5-day forecast and group by day
+      const response = await axios.get(`${this.baseUrl}/forecast`, {
+        params: {
+          lat,
+          lon,
+          appid: this.apiKey,
+          units: 'imperial'
+        }
+      })
+
+      // Group forecast data by day
+      const dailyData = {}
+      response.data.list.forEach(item => {
+        const date = item.dt_txt.split(' ')[0]
+        if (!dailyData[date]) {
+          dailyData[date] = {
+            temps: [],
+            conditions: [],
+            precipitation: 0,
+            windSpeeds: [],
+            humidity: []
+          }
+        }
+        dailyData[date].temps.push(item.main.temp)
+        dailyData[date].conditions.push(this.mapWeatherCondition(item.weather[0].id))
+        dailyData[date].precipitation += (item.rain?.['3h'] || 0)
+        dailyData[date].windSpeeds.push(item.wind.speed)
+        dailyData[date].humidity.push(item.main.humidity)
+      })
+
+      return Object.entries(dailyData).map(([date, data]) => ({
+        date: new Date(date).toISOString(),
+        tempHigh: Math.round(Math.max(...data.temps)),
+        tempLow: Math.round(Math.min(...data.temps)),
+        condition: data.conditions[0], // Use first condition of the day
+        precipitation: Math.min(data.precipitation * 100 / 24, 100), // Convert to percentage
+        windSpeed: Math.round(data.windSpeeds.reduce((a, b) => a + b, 0) / data.windSpeeds.length),
+        humidity: Math.round(data.humidity.reduce((a, b) => a + b, 0) / data.humidity.length)
+      })).slice(0, 7)
+    } catch (error) {
+      console.error('Error fetching daily forecast:', error)
+      throw new Error('Failed to fetch daily forecast')
+    }
   }
 
   async searchLocation(query) {
-    // Mock location search
-    const mockLocations = [
-      { name: 'San Francisco, CA', lat: 37.7749, lon: -122.4194 },
-      { name: 'New York, NY', lat: 40.7128, lon: -74.0060 },
-      { name: 'Los Angeles, CA', lat: 34.0522, lon: -118.2437 },
-      { name: 'Chicago, IL', lat: 41.8781, lon: -87.6298 },
-      { name: 'Miami, FL', lat: 25.7617, lon: -80.1918 }
-    ]
-    
-    return mockLocations.filter(location => 
-      location.name.toLowerCase().includes(query.toLowerCase())
-    )
+    if (this.useMockData) {
+      // Mock location search
+      const mockLocations = [
+        { name: 'San Francisco, CA', lat: 37.7749, lon: -122.4194 },
+        { name: 'New York, NY', lat: 40.7128, lon: -74.0060 },
+        { name: 'Los Angeles, CA', lat: 34.0522, lon: -118.2437 },
+        { name: 'Chicago, IL', lat: 41.8781, lon: -87.6298 },
+        { name: 'Miami, FL', lat: 25.7617, lon: -80.1918 }
+      ]
+      
+      return mockLocations.filter(location => 
+        location.name.toLowerCase().includes(query.toLowerCase())
+      )
+    }
+
+    try {
+      const response = await axios.get(`${this.geocodingUrl}/direct`, {
+        params: {
+          q: query,
+          limit: 5,
+          appid: this.apiKey
+        }
+      })
+
+      return response.data.map(location => ({
+        name: `${location.name}${location.state ? ', ' + location.state : ''}, ${location.country}`,
+        lat: location.lat,
+        lon: location.lon
+      }))
+    } catch (error) {
+      console.error('Error searching locations:', error)
+      throw new Error('Failed to search locations')
+    }
   }
 
   // Activity-specific weather analysis
@@ -163,6 +281,27 @@ class WeatherService {
       ideal: score >= 80,
       acceptable: score >= 60
     }
+  }
+
+  // Helper function to convert wind degrees to direction
+  getWindDirection(degrees) {
+    const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
+    const index = Math.round(degrees / 22.5) % 16
+    return directions[index]
+  }
+
+  // Helper function to map OpenWeatherMap weather IDs to our condition types
+  mapWeatherCondition(weatherId) {
+    if (weatherId >= 200 && weatherId < 300) return 'thunderstorm'
+    if (weatherId >= 300 && weatherId < 400) return 'drizzle'
+    if (weatherId >= 500 && weatherId < 600) return 'rain'
+    if (weatherId >= 600 && weatherId < 700) return 'snow'
+    if (weatherId >= 700 && weatherId < 800) return 'atmosphere'
+    if (weatherId === 800) return 'sunny'
+    if (weatherId === 801) return 'partly-cloudy'
+    if (weatherId === 802) return 'partly-cloudy'
+    if (weatherId === 803 || weatherId === 804) return 'cloudy'
+    return 'partly-cloudy' // Default fallback
   }
 }
 

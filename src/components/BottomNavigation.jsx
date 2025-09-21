@@ -10,7 +10,7 @@ const BottomNavigation = ({ currentView, onViewChange }) => {
   ]
 
   return (
-    <nav className="bg-surface border-t border-gray-200">
+    <nav className="bg-surface dark:bg-surface-dark border-t border-gray-200 dark:border-border-dark transition-colors duration-300">
       <div className="flex">
         {navItems.map((item) => {
           const Icon = item.icon
@@ -22,8 +22,8 @@ const BottomNavigation = ({ currentView, onViewChange }) => {
               onClick={() => onViewChange(item.id)}
               className={`flex-1 py-3 px-2 flex flex-col items-center space-y-1 transition-colors ${
                 isActive
-                  ? 'text-primary'
-                  : 'text-text-secondary hover:text-text-primary'
+                  ? 'text-primary dark:text-primary-dark'
+                  : 'text-text-secondary dark:text-text-secondary-dark hover:text-text-primary dark:hover:text-text-primary-dark'
               }`}
             >
               <Icon className="w-5 h-5" />
